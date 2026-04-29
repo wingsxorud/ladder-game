@@ -41,12 +41,14 @@ def main():
 
     # 2. 게임 실행 섹션
     else:
-        l_json = json.dumps(st.session_state['ladder_final'])
-        n_json = json.dumps(st.session_state['names_final'], ensure_ascii=False)
-        i_json = json.dumps(st.session_state['items_final'], ensure_ascii=False)
-        c_json = json.dumps(st.session_state['colors'])
-        p_count = st.session_state['num_p_final']
+        # JSON 데이터를 미리 파이썬 변수로 확정
+        l_js = json.dumps(st.session_state['ladder_final'])
+        n_js = json.dumps(st.session_state['names_final'], ensure_ascii=False)
+        i_js = json.dumps(st.session_state['items_final'], ensure_ascii=False)
+        c_js = json.dumps(st.session_state['colors'])
+        p_cnt = st.session_state['num_p_final']
 
+        # f-string 안에서 자바스크립트 중괄호와 충돌을 피하기 위해 {{ }} 사용
         html_code = f"""
         <div style="text-align:center; width: 100%;">
             <canvas id="ladCanvas" style="cursor:pointer; background:#fff; border:1px solid #ddd; border-radius:15px; width: 100%; max-width: 500px; height: auto; touch-action: none;"></canvas>
@@ -56,19 +58,18 @@ def main():
             const canvas = document.getElementById('ladCanvas');
             const ctx = canvas.getContext('2d');
             
-            // 모바일 고해상도 대응
             const dpr = window.devicePixelRatio || 1;
             canvas.width = 500 * dpr;
             canvas.height = 600 * dpr;
             ctx.scale(dpr, dpr);
 
-            const lines = {l_json};
-            const names = {names_json};
-            const items = {i_json};
-            const colors = {c_json};
-            const numP = {p_count};
+            const lines = {l_js};
+            const names = {n_js};
+            const items = {i_js};
+            const colors = {c_js};
+            const numP = {p_cnt};
             
-            const m = 40; // 좌우 여백 살짝 조정
+            const m = 40;
             const spacing = (500 - m * 2) / (numP - 1);
             const rH = (600 - 160) / lines.length;
 
@@ -123,7 +124,6 @@ def main():
                 stepMove();
             }}
 
-            // 클릭 및 터치 통합 이벤트
             function handleEvent(e) {{
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = 500 / rect.width;
