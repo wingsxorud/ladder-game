@@ -1,67 +1,65 @@
 import streamlit as st
+from streamlit_echarts import st_echarts
 import random
 import time
 
-def create_ladder_game():
-    st.set_page_config(page_title="인생은 복불복!", layout="centered")
+def create_roulette_game():
+    st.set_page_config(page_title="운명의 돌림판", layout="centered")
     
-    st.title("🎢 쪼는 맛이 있는 사다리 타기")
-    st.write("행님, 과연 결과는 어디로 갈까요?")
+    st.title("🎯 운명의 돌림판")
+    st.write("행님, 이번엔 돌림판으로 화끈하게 가시죠!")
 
-    num_people = st.number_input("참여 인원 (2~10명)", min_value=2, max_value=10, value=3)
+    # 1. 항목 입력
+    items_input = st.text_area("항목들을 쉼표(,)나 엔터로 구분해서 입력하쇼!", 
+                               value="커피 쏘기, 밥 쏘기, 꽝, 면제", 
+                               help="예: 이름1, 이름2, 이름3")
+    
+    # 입력값 정리
+    items = [item.strip() for item in items_input.replace('\n', ',').split(',') if item.strip()]
 
-    col1, col2 = st.columns(2)
-    names = []
-    items = []
+    if len(items) < 2:
+        st.warning("항목을 최소 2개 이상 입력해야 돌릴 맛이 나죠, 행님!")
+        return
 
-    with col1:
-        st.subheader("👤 이름")
-        for i in range(num_people):
-            names.append(st.text_input(f"사람 {i+1}", value=f"참가자{i+1}", key=f"name_{i}"))
+    # 2. 돌림판 데이터 구성
+    data = [{"value": 1, "name": item} for item in items]
+    
+    # 돌림판 옵션 설정 (ECharts 활용)
+    options = {
+        "tooltip": {"trigger": "item"},
+        "series": [
+            {
+                "type": "pie",
+                "radius": ["40%", "70%"],
+                "avoidLabelOverlap": False,
+                "itemStyle": {"borderRadius": 10, "borderColor": "#fff", "borderWidth": 2},
+                "label": {"show": True, "position": "inside", "formatter": "{b}"},
+                "data": data,
+            }
+        ],
+    }
 
-    with col2:
-        st.subheader("🎁 항목")
-        for i in range(num_people):
-            items.append(st.text_input(f"항목 {i+1}", value=f"결과{i+1}", key=f"item_{i}"))
+    # 3. 돌림판 출력
+    st_echarts(options=options, height="400px")
 
-    if st.button("운명의 사다리 내려가기! 👇"):
-        if len(set(names)) != len(names):
-            st.error("이름이 중복되면 안 됩니다, 행님!")
-            return
-
-        # 1. 랜덤 매칭 생성
-        shuffled_items = items.copy()
-        random.shuffle(shuffled_items)
-        results = dict(zip(names, shuffled_items))
-
-        # 2. 긴장감 연출 (Progress Bar)
-        st.divider()
-        st.subheader("🧗 사다리 타는 중...")
-        
-        # 이름별로 하나씩 결과를 공개하는 연출
-        for i, name in enumerate(names):
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+    # 4. 실행 버튼
+    if st.button("🚀 돌려라 돌려!!"):
+        # 긴장감 조성
+        with st.empty():
+            for _ in range(10):
+                temp_choice = random.choice(items)
+                st.subheader(f"🎲 돌아가는 중... -> {temp_choice}")
+                time.sleep(0.1)
             
-            # 사다리 타고 내려가는 로딩 연출
-            for percent_complete in range(0, 101, 20):
-                time.sleep(0.2) # 속도 조절 (더 느리게 하면 더 쫄림)
-                progress_bar.progress(percent_complete)
-                status_text.text(f"{name}님이 사다리를 내려가는 중... {percent_complete}%")
+            # 최종 결과 선택
+            winner = random.choice(items)
             
-            # 해당 사람의 결과 공개
-            st.write(f"✅ **{name}** 님은? 👉 **{results[name]}**")
-            status_text.empty() # 상태 메시지 삭제
-            time.sleep(0.5) # 다음 사람으로 넘어가기 전 휴식
-
-        # 3. 최종 결과 총정리
-        st.divider()
-        st.success("🎉 모든 결과가 확정되었습니다!")
-        st.balloons()
-        
-        with st.expander("한눈에 보기"):
-            for n, r in results.items():
-                st.write(f"**{n}** : {r}")
+            # 화려한 결과 발표
+            st.divider()
+            st.balloons()
+            st.snow() # 겨울이면 눈도 내리게 해봤슴다
+            st.header(f"🎊 결과: [ {winner} ]")
+            st.success(f"행님, 오늘의 운명은 '{winner}'(으)로 결정됐습니다!")
 
 if __name__ == "__main__":
-    create_ladder_game()
+    create_roulette_game()
