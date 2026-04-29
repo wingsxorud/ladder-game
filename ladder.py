@@ -5,7 +5,7 @@ import random
 
 def main():
     st.set_page_config(page_title="네이버 사다리", layout="centered")
-    st.title("🌈 컬러풀 사다리 타기")
+    st.title("🌈 컬러풀 사다리 (모바일 최적화)")
 
     if 'game_started' not in st.session_state:
         st.session_state.game_started = False
@@ -25,7 +25,6 @@ def main():
                 st.session_state['names_final'] = [str(x) for x in raw_names]
                 st.session_state['items_final'] = [str(x) for x in raw_items]
                 
-                # 가로줄 생성
                 ladder_lines = []
                 for _ in range(12):
                     row = [0] * (int(num_p) - 1)
@@ -36,7 +35,6 @@ def main():
                 
                 st.session_state['ladder_final'] = ladder_lines
                 st.session_state['num_p_final'] = int(num_p)
-                # 각 참가자별 고유 색상 리스트 (화려한 색상들)
                 st.session_state['colors'] = ["#FF4B4B", "#1C83E1", "#00C092", "#FFC61E", "#803DF5", "#FF69B4", "#FFA500", "#45DF31"][:int(num_p)]
                 st.session_state.game_started = True
                 st.rerun()
@@ -50,41 +48,45 @@ def main():
         p_count = st.session_state['num_p_final']
 
         html_code = f"""
-        <div style="text-align:center;">
-            <canvas id="ladCanvas" width="550" height="600" style="cursor:pointer; background:#fff; border:1px solid #ddd; border-radius:15px;"></canvas>
+        <div style="text-align:center; width: 100%;">
+            <canvas id="ladCanvas" style="cursor:pointer; background:#fff; border:1px solid #ddd; border-radius:15px; width: 100%; max-width: 500px; height: auto; touch-action: none;"></canvas>
         </div>
         <script>
         (function() {{
             const canvas = document.getElementById('ladCanvas');
             const ctx = canvas.getContext('2d');
+            
+            // 모바일 고해상도 대응
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = 500 * dpr;
+            canvas.height = 600 * dpr;
+            ctx.scale(dpr, dpr);
+
             const lines = {l_json};
-            const names = {n_json};
+            const names = {names_json};
             const items = {i_json};
             const colors = {c_json};
             const numP = {p_count};
             
-            const m = 60;
-            const spacing = (canvas.width - m * 2) / (numP - 1);
-            const rH = (canvas.height - 160) / lines.length;
+            const m = 40; // 좌우 여백 살짝 조정
+            const spacing = (500 - m * 2) / (numP - 1);
+            const rH = (600 - 160) / lines.length;
 
             function draw() {{
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.clearRect(0, 0, 500, 600);
                 ctx.lineWidth = 3;
-                ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center';
+                ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
 
                 for(let i=0; i<numP; i++) {{
                     let x = m + i * spacing;
-                    // 기본 세로선도 해당 참가자의 연한 색상으로 표시
                     ctx.strokeStyle = colors[i] + '44'; 
-                    ctx.beginPath(); ctx.moveTo(x, 80); ctx.lineTo(x, canvas.height - 80); ctx.stroke();
-                    
+                    ctx.beginPath(); ctx.moveTo(x, 80); ctx.lineTo(x, 520); ctx.stroke();
                     ctx.fillStyle = colors[i];
                     ctx.fillText(names[i], x, 60);
                     ctx.fillStyle = "#333";
-                    ctx.fillText(items[i], x, canvas.height - 45);
+                    ctx.fillText(items[i], x, 560);
                 }}
 
-                // 가로선
                 ctx.strokeStyle = '#ddd';
                 lines.forEach((row, rIdx) => {{
                     row.forEach((has, cIdx) => {{
@@ -100,9 +102,8 @@ def main():
             function move(pIdx) {{
                 let curX = pIdx;
                 let step = 0;
-                ctx.strokeStyle = colors[pIdx]; // 해당 참가자의 고유 색상 사용
-                ctx.lineWidth = 6;
-                ctx.lineCap = 'round';
+                ctx.strokeStyle = colors[pIdx];
+                ctx.lineWidth = 6; ctx.lineCap = 'round';
 
                 function stepMove() {{
                     if (step >= lines.length) return;
@@ -122,20 +123,28 @@ def main():
                 stepMove();
             }}
 
-            canvas.onclick = (e) => {{
-                const r = canvas.getBoundingClientRect();
-                const x = e.clientX - r.left;
+            // 클릭 및 터치 통합 이벤트
+            function handleEvent(e) {{
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = 500 / rect.width;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const x = (clientX - rect.left) * scaleX;
+                
                 for(let i=0; i<numP; i++) {{
                     if(Math.abs(x - (m + i * spacing)) < 30) {{ move(i); break; }}
                 }}
-            }};
+            }}
+
+            canvas.addEventListener('mousedown', handleEvent);
+            canvas.addEventListener('touchstart', (e) => {{ e.preventDefault(); handleEvent(e); }}, {{passive: false}});
+
             draw();
         }})();
         </script>
         """
         components.html(html_code, height=660)
 
-        if st.button("🔄 다시 설정"):
+        if st.button("🔄 처음부터 다시 하기"):
             st.session_state.clear()
             st.rerun()
 
