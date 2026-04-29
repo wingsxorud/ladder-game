@@ -64,3 +64,104 @@ def main():
         const canvas = document.getElementById('ladderCanvas');
         const ctx = canvas.getContext('2d');
         const lines = {ladder_json};
+        const names = {names_json};
+        const items = {items_json};
+        const numPeople = {num_people};
+        
+        const margin = 60;
+        const spacing = (canvas.width - margin * 2) / (numPeople - 1);
+        const rowHeight = (canvas.height - 160) / lines.length;
+
+        function drawLadder() {{
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+
+            for(let i=0; i<numPeople; i++) {{
+                let x = margin + i * spacing;
+                ctx.beginPath();
+                ctx.moveTo(x, 80);
+                ctx.lineTo(x, canvas.height - 80);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#333';
+                ctx.fillText(names[i], x, 60);
+                ctx.fillText(items[i], x, canvas.height - 50);
+            }}
+
+            lines.forEach((row, rowIndex) => {{
+                row.forEach((hasLine, colIndex) => {{
+                    if(hasLine) {{
+                        let x = margin + colIndex * spacing;
+                        let y = 80 + (rowIndex + 0.5) * rowHeight;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + spacing, y);
+                        ctx.stroke();
+                    }}
+                }});
+            }});
+        }}
+
+        function animate(playerIdx) {{
+            let currentXIdx = playerIdx;
+            let step = 0;
+            ctx.strokeStyle = '#FF4B4B';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+
+            function move() {{
+                if (step >= lines.length) return;
+                
+                let startX = margin + currentXIdx * spacing;
+                let startY = 80 + step * rowHeight;
+                let midY = startY + rowHeight / 2;
+                let endY = startY + rowHeight;
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(startX, midY);
+                
+                if(currentXIdx > 0 && lines[step][currentXIdx-1]) {{
+                    currentXIdx--;
+                    ctx.lineTo(margin + currentXIdx * spacing, midY);
+                }} else if(currentXIdx < numPeople - 1 && lines[step][currentXIdx]) {{
+                    currentXIdx++;
+                    ctx.lineTo(margin + currentXIdx * spacing, midY);
+                }}
+                
+                ctx.lineTo(margin + currentXIdx * spacing, endY);
+                ctx.stroke();
+                
+                step++;
+                setTimeout(move, 80);
+            }}
+            move();
+        }}
+
+        canvas.onclick = (e) => {{
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            for(let i=0; i<numPeople; i++) {{
+                let colX = margin + i * spacing;
+                if(Math.abs(x - colX) < 30) {{
+                    animate(i);
+                    break;
+                }}
+            }}
+        }};
+
+        drawLadder();
+        </script>
+        """
+
+        components.html(html_code, height=650)
+
+        if st.button("🔄 다시 설정하기"):
+            st.session_state.game_started = False
+            st.rerun()
+
+if __name__ == "__main__":
+    main()
